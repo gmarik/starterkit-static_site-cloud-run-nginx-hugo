@@ -1,0 +1,31 @@
+timeout: '600s'
+
+images: 
+  - gcr.io/$PROJECT_ID/site01:$SHORT_SHA
+  - gcr.io/$PROJECT_ID/site01:latest # cache
+  
+options:
+  env:
+    - CLOUDSDK_CORE_PROJECT=$PROJECT_ID
+    - CLOUD_RUN_PROJECT_NAME=site01
+    - _SITE_IMG=gcr.io/$PROJECT_ID/site01:$SHORT_SHA
+    - _SITE_IMG_LATEST=gcr.io/$PROJECT_ID/site01:latest
+    - _SITE_NAME=site01
+
+steps:
+  - id: 'site: image: build'
+    name: 'gcr.io/cloud-builders/docker'
+    entrypoint: './cloudbuild/cmd.sh'
+    args: [site_image_build]
+
+  - id: 'site: cloud_run: deploy'
+    name: gcr.io/cloud-builders/gcloud
+    entrypoint: './cloudbuild/cmd.sh'
+    args: [site_cloud_run_deploy]
+    waitFor: ['site: image: build']
+
+## Permissions
+##
+# https://cloud.google.com/run/docs/continuous-deployment#continuous-iam
+# https://cloud.google.com/cloud-build/docs/build-config
+# https://cloud.google.com/cloud-build/docs/speeding-up-builds
